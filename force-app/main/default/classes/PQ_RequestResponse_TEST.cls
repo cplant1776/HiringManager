@@ -36,6 +36,8 @@ public class PQ_RequestResponse_TEST {
                                   FROM Applicant__c 
                                   WHERE Email__c='abc@def.com' LIMIT 1];
         
+        System.debug(applicant.Certifications__r);
+        
         // Debug Statements
         System.debug('Applicant\'s certs:');
         for(Certification__c eachCert : applicant.Certifications__r)

@@ -31,7 +31,7 @@ public class CertValueResponseFaker_TEST {
     {
         Set<Integer> indices = CertValueResponseFaker.generateCertIndices(CERTS_FOUND_SIZE, CERTS_FOUND_SIZE);
                 
-        // Ensure result contains all 10 indices: [0-9]
+        // Ensure result contains all indices: [0-(CERTS_FOUND_SIZE-1)]
         for(Integer i=0; i < CERTS_FOUND_SIZE; i++)
         {
             System.assert(indices.Contains(i));

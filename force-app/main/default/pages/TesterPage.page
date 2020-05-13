@@ -1,0 +1,4 @@
+<apex:page controller="TesterController">
+    <!--{!StringMethod}, {!myString}, {!myString} -->
+    {!myString}, {!StringMethod1}, {!StringMethod2}, {!myString}
+</apex:page>

@@ -78,6 +78,10 @@ public class ProgrammerQuotes_RequestResponse {
                 certsToDelete.addall( (List<Id>)comparisonResult.get('delete') );
             }
         }
+        
+        // Add correct name to added certifications
+        certsToAdd = nameAddedCerts(certsToAdd);
+        
         // Update DB & pray
         Database.delete(certsToDelete);
         insert certsToAdd;
@@ -138,6 +142,28 @@ public class ProgrammerQuotes_RequestResponse {
         // Wrap results and return
         result.put('add', applicantCertsToAdd);
         result.put('delete', applicantCertsToDelete);
+        return result;
+    }
+    
+    private static List<Certification__c> nameAddedCerts(List<Certification__c> addedCerts)
+    {
+        // Declarations
+        List<Certification__c> result = new List<Certification__c>();
+        
+        // Map certification name by external id
+        List<Cert_Value__c> certValues = [SELECT Name, ID_Hash__c FROM Cert_Value__c];
+        Map<String, String> certNameByHashId = new Map<String, String>();
+        for(Cert_Value__c eachCertValue : certValues)
+        {
+            certNameByHashId.put(eachCertValue.ID_Hash__c, eachCertValue.Name);
+        }
+        
+        // Set certification names
+        for(Certification__c eachCert : addedCerts)
+        {
+            eachCert.Name = certNameByHashId.get(eachCert.Certification_Id__c);
+        }
+        
         return result;
     }
 }
