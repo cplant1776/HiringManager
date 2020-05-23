@@ -3,8 +3,8 @@ public class ProgrammerQuotes_RequestResponse {
     private static final String CERTS_URL_BASE = 'https://programming-quotes-api.herokuapp.com/quotes/page/';
     private static final String DUMMY_APPLICANT_ENDPOINT = CERTS_URL_BASE + '1';
     
-    private static final Integer MIN_NUM_CERTS = 2;
-    private static final Integer MAX_NUM_CERTS = 6;
+    @testVisible private static Integer MIN_NUM_CERTS = 2;
+    @testVisible private static Integer MAX_NUM_CERTS = 6;
     
     @InvocableMethod // Let's us call it from internal processes (flows, process builders)
     public static void updateCerts(List<Id> applicantIds)
@@ -48,7 +48,7 @@ public class ProgrammerQuotes_RequestResponse {
                                  FROM Applicant__c WHERE Id IN :applicantIds])
         {
             applicantsById.put(each.Id, each);
-        }
+        }        
         
         // Iterate through applicant Ids
         for(Id appId : applicantsById.keySet())
@@ -70,6 +70,11 @@ public class ProgrammerQuotes_RequestResponse {
                 );
                 // Pick random subset from callout's returned certs
                 Set<CertDetails> certsFound = CertValueResponseFaker.pickApplicantCerts(certs, MIN_NUM_CERTS, MAX_NUM_CERTS);
+                System.debug('Returned Certs:');
+                for(CertDetails eachCert : certsFound)
+                {
+                    System.debug(eachCert.id_x);
+                }
                 
                 // Get applicant's certs that will be added/removed
                 Map<String, List<Object>> comparisonResult = compareCerts(certsFound, applicantsById.get(appId));
@@ -83,21 +88,24 @@ public class ProgrammerQuotes_RequestResponse {
         certsToAdd = nameAddedCerts(certsToAdd);
         
         // Update DB & pray
+        System.debug('Updating database . . .');
+        System.debug('certsToDelete: ' + certsToDelete);
+        System.debug('certsToAdd: ' + certsToAdd);
         Database.delete(certsToDelete);
         insert certsToAdd;
     }
     
     /**
-* Compares an applicant's existing certs with the certs returned by the callout
-* 
-* RETURN two lists wrapped in a map: 
-* applicantCertsToAdd | type=Certification__c | key='add'
-* applicantCertsToDelete | type=Id | key='delete'
-* 
-* PARAMETERS
-* certsFound - Set of CertDetails returned by the callout
-* applicant - applicant we made the callout for
-*/ 
+    * Compares an applicant's existing certs with the certs returned by the callout
+    * 
+    * RETURN two lists wrapped in a map: 
+    * applicantCertsToAdd | type=Certification__c | key='add'
+    * applicantCertsToDelete | type=Id | key='delete'
+    * 
+    * PARAMETERS
+    * certsFound - Set of CertDetails returned by the callout
+    * applicant - applicant we made the callout for
+    */ 
     @testVisible
     private static Map<String, List<Object>> compareCerts(Set<CertDetails> certsFound, Applicant__c applicant)
     {
@@ -105,6 +113,18 @@ public class ProgrammerQuotes_RequestResponse {
         Map<String, List<Object>> result = new Map<String, List<Object>>();
         List<Id> applicantCertsToDelete = new List<Id>();
         List<Certification__c> applicantCertsToAdd = new List<Certification__c>();
+        
+        // Initial debugs
+        System.debug('Applicant certs: ');
+        for(Certification__c eachCert : applicant.Certifications__r)
+        {
+            System.debug(eachCert.Certification_ID__c);
+        }
+        System.debug('Passed certs: ');
+        for(CertDetails eachCert : certsFound)
+        {
+            System.debug(eachCert.id_x);
+        }
         
         // Map Applicant's existing Cert's Ids by their external Id
         Map<String, Id> appCertIdsByExternalId = new Map<String, Id>();
@@ -125,7 +145,7 @@ public class ProgrammerQuotes_RequestResponse {
                 applicantCertsToAdd.add(new Certification__c(
                     Applicant__c = applicant.Id,
                     Certification_Id__c = eachCert.id_x,
-                    Name='Whats my name??'
+                    Name='placeholder'
                 ));
             }
             
@@ -139,19 +159,31 @@ public class ProgrammerQuotes_RequestResponse {
             applicantCertsToDelete.add(certId);
         }
         
-        // Wrap results and return
+        // Final debug
+        System.debug('Certs to add:');
+        for(Certification__c eachCert : applicantCertsToAdd)
+        {
+            System.debug(eachCert.Certification_ID__c);
+        }
+        System.debug('Certs to delete:');
+        for(Id certId : applicantCertsToDelete)
+        {
+            System.debug(certId);
+        }
+        
+        // Wrap results
         result.put('add', applicantCertsToAdd);
         result.put('delete', applicantCertsToDelete);
         return result;
     }
     
+    @testVisible
     private static List<Certification__c> nameAddedCerts(List<Certification__c> addedCerts)
-    {
-        // Declarations
-        List<Certification__c> result = new List<Certification__c>();
-        
+    {   
         // Map certification name by external id
         List<Cert_Value__c> certValues = [SELECT Name, ID_Hash__c FROM Cert_Value__c];
+        System.debug('Found Cert Values: ' + certValues);
+        
         Map<String, String> certNameByHashId = new Map<String, String>();
         for(Cert_Value__c eachCertValue : certValues)
         {
@@ -164,6 +196,6 @@ public class ProgrammerQuotes_RequestResponse {
             eachCert.Name = certNameByHashId.get(eachCert.Certification_Id__c);
         }
         
-        return result;
+        return addedCerts;
     }
 }
