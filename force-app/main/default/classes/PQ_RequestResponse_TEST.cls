@@ -66,7 +66,7 @@ public class PQ_RequestResponse_TEST {
     {
         List<Certification__c> certsToAdd = [SELECT Id, Certification_ID__c 
                                              FROM Certification__c
-                                            LIMIT 1];
+                                             LIMIT 1];
         
         Test.startTest();
         
@@ -158,5 +158,21 @@ public class PQ_RequestResponse_TEST {
             System.debug('id_x: ' + eachCert.Certification_Id__c + ' | id: ' + eachCert.Id);
         }
     }
-
+    
+    @isTest
+    private static void canWeSchedulePQ_Schedule()
+    {
+        test.startTest();
+        Test.setMock(HttpCalloutMock.class, new PQ_RequestResponseMock());
+        
+        ProgrammerQuotes_Schedule mySchedulable = new ProgrammerQuotes_Schedule();
+        String jobId = System.schedule('Sync Applicant Credentials', 
+                                       ProgrammerQuotes_Schedule.CRON_STRING,
+                                       mySchedulable);
+        // Check that job was scheduled
+        Integer numOfScheduledJobs = [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.JobType = '7'];
+        System.assertEquals(1, numOfScheduledJobs);
+        test.stopTest();
+    }
+    
 }
